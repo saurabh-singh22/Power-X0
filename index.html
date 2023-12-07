@@ -115,6 +115,8 @@
     <div id="victoryMessage"></div>
     <div id="currentPlayer">Current Player: X</div>
 
+    <audio id="clickSound" src="MouseClick.mp3"></audio>
+
   <script>
     let currentPlayer = "X";
     let gameBoard = ["", "", "", "", "", "", "", "", ""];
@@ -127,6 +129,11 @@
     // Track remaining power-ups for each player
     let swapPowerUps = { "X": 2, "O": 2 };
     let destroyPowerUps = { "X": 1, "O": 1 };
+
+      function playClickSound() {
+      const clickSound = document.getElementById("clickSound");
+      clickSound.play();
+    }
 
     function initGame() {
       const boardElement = document.getElementById("board");
@@ -141,6 +148,8 @@
 
     function cellClick(index) {
   if (!gameEnded) {
+    playClickSound(); // Play sound on cell click
+
     if (!powerUpActive && !destroyActive) {
       if (gameBoard[index] === "") {
         gameBoard[index] = currentPlayer;
@@ -157,9 +166,9 @@
       }
     } else if (powerUpActive && !destroyActive) {
       selectedCell = index;
-          powerUpActive = false; // Set powerUpActive to false after swap
-          currentPlayer = currentPlayer === "X" ? "O" : "X"; // Change the turn
-          updateCurrentPlayer();
+      powerUpActive = false;
+      currentPlayer = currentPlayer === "X" ? "O" : "X";
+      updateCurrentPlayer();
     } else if (destroyActive && destroyPowerUps[currentPlayer] > 0) {
       if (gameBoard[index] !== "") {
         gameBoard[index] = "";
@@ -169,7 +178,6 @@
         updateCurrentPlayer();
       }
     } else if (powerUpActive && swapPowerUps[currentPlayer] > 0) {
-      // Swap the selected cell
       gameBoard[selectedCell] = gameBoard[selectedCell] === "X" ? "O" : "X";
       selectedCell = null;
       swapPowerUps[currentPlayer]--;
@@ -182,12 +190,14 @@
 }
 
 
+
 function updateCurrentPlayer() {
   document.getElementById("currentPlayer").innerText = `Current Player: ${currentPlayer}`;
 }
 
     function activateSwap() {
       if (swapPowerUps[currentPlayer] > 0) {
+        playClickSound();
         powerUpActive = !powerUpActive;
         if (!powerUpActive && selectedCell !== null) {
           // Swap the selected cell
@@ -201,6 +211,7 @@ function updateCurrentPlayer() {
 
     function activateDestroy() {
       if (destroyPowerUps[currentPlayer] > 0) {
+        playClickSound();
         destroyActive = true;
         updateBoard();
       }
