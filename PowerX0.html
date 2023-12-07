@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #4b4b4b;
+    }
+
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-gap: 5px;
+      padding-top: 20px;
+    }
+
+    .cell {
+      width: 100px;
+      height: 100px;
+      border: 2px solid #ccc;
+      font-size: 36px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      background-color: whitesmoke;
+    }
+
+    .cell.swap {
+      background-color: #aaffaa;
+    }
+
+    .cell.destroy {
+      background-color: #ffaaaa;
+    }
+
+    #buttons {
+      display: flex;
+      justify-content: space-around;
+      width: 300px;
+      margin-top: 20px;
+    }
+
+    #reset{
+      color: black;
+    }
+    #swap{
+      background-color: green;
+    }
+    #destroy {
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #ff7f7f;
+    }
+
+    #victoryMessage {
+      margin-top: 20px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    nav ul{
+      list-style-type: none;
+
+    }
+
+    nav{
+      background-color: rgb(0, 115, 128);
+      height: 50px;
+      font-size: 25px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+    }
+
+    *{
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+   <title>Tic Tac Toe with Power-up</title>
+  </head>
+  <body>
+
+    <nav>
+         <ul>
+          <li>POWER X0</li>
+        </ul>
+    </nav>
+  
+    <div id="instructions" style="margin-left: 20px; display: none;">
+      <h2>Instructions:</h2>
+      <p>Welcome to Power X0!</p>
+      <p>Use the Swap and Destroy power-ups strategically to gain an advantage.</p>
+      <p>You can either use a powerup or make a move on the board</p>
+      <p>Swap Power-up: Click the "Swap" button, then click on opponents symbol and then press swap again.</p>
+      <p>Destroy Power-up: Click the "Destroy" button, then click on a non-empty cell to remove its content.</p>
+      <p>The game will automatically switch turns after using power-ups or making a regular move.</p>
+      <p>Enjoy the game!</p>
+    </div>
+    <div id="board"></div>
+    <div id="buttons">
+      <button onclick="toggleInstructions()">Info</button>
+      <button id="reset" onclick="resetGame()" disabled>Reset Game</button>
+      <button id="swap" onclick="activateSwap()">Swap (2 left)</button>
+      <button id="destroy" onclick="activateDestroy()">Destroy (1 left)</button>
+    </div>
+    <div id="victoryMessage"></div>
+    <div id="currentPlayer">Current Player: X</div>
+
+  <script>
+    let currentPlayer = "X";
+    let gameBoard = ["", "", "", "", "", "", "", "", ""];
+    let powerUpActive = false;
+    let selectedCell = null;
+    let destroyActive = false;
+    let victoryMessageElement = document.getElementById("victoryMessage");
+    let gameEnded = false;
+
+    // Track remaining power-ups for each player
+    let swapPowerUps = { "X": 2, "O": 2 };
+    let destroyPowerUps = { "X": 1, "O": 1 };
+
+    function initGame() {
+      const boardElement = document.getElementById("board");
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+        cell.addEventListener("click", () => cellClick(i));
+        boardElement.appendChild(cell);
+      }
+      updateBoard();
+    }
+
+    function cellClick(index) {
+  if (!gameEnded) {
+    if (!powerUpActive && !destroyActive) {
+      if (gameBoard[index] === "") {
+        gameBoard[index] = currentPlayer;
+        if (checkWinner()) {
+          displayVictoryMessage(`Player ${currentPlayer} wins!`);
+          activateResetButton();
+        } else if (gameBoard.every((cell) => cell !== "")) {
+          displayVictoryMessage("It's a draw!");
+          activateResetButton();
+        } else {
+          currentPlayer = currentPlayer === "X" ? "O" : "X";
+          updateCurrentPlayer();
+        }
+      }
+    } else if (powerUpActive && !destroyActive) {
+      selectedCell = index;
+          powerUpActive = false; // Set powerUpActive to false after swap
+          currentPlayer = currentPlayer === "X" ? "O" : "X"; // Change the turn
+          updateCurrentPlayer();
+    } else if (destroyActive && destroyPowerUps[currentPlayer] > 0) {
+      if (gameBoard[index] !== "") {
+        gameBoard[index] = "";
+        destroyPowerUps[currentPlayer]--;
+        destroyActive = false;
+        currentPlayer = currentPlayer === "X" ? "O" : "X";
+        updateCurrentPlayer();
+      }
+    } else if (powerUpActive && swapPowerUps[currentPlayer] > 0) {
+      // Swap the selected cell
+      gameBoard[selectedCell] = gameBoard[selectedCell] === "X" ? "O" : "X";
+      selectedCell = null;
+      swapPowerUps[currentPlayer]--;
+      powerUpActive = false;
+      currentPlayer = currentPlayer === "X" ? "O" : "X";
+      updateCurrentPlayer();
+    }
+    updateBoard();
+  }
+}
+
+
+function updateCurrentPlayer() {
+  document.getElementById("currentPlayer").innerText = `Current Player: ${currentPlayer}`;
+}
+
+    function activateSwap() {
+      if (swapPowerUps[currentPlayer] > 0) {
+        powerUpActive = !powerUpActive;
+        if (!powerUpActive && selectedCell !== null) {
+          // Swap the selected cell
+          gameBoard[selectedCell] = gameBoard[selectedCell] === "X" ? "O" : "X";
+          selectedCell = null;
+          swapPowerUps[currentPlayer]--;
+        }
+        updateBoard();
+      }
+    }
+
+    function activateDestroy() {
+      if (destroyPowerUps[currentPlayer] > 0) {
+        destroyActive = true;
+        updateBoard();
+      }
+    }
+
+    function updateSwapButton() {
+      document.getElementById("swap").innerText = `Swap (${swapPowerUps[currentPlayer]} left)`;
+    }
+
+    function updateDestroyButton() {
+      document.getElementById("destroy").innerText = `Destroy (${destroyPowerUps[currentPlayer]} left)`;
+    }
+    
+
+    function activateResetButton() {
+      document.getElementById("reset").disabled = false;
+      gameEnded = true;
+    }
+
+    function displayVictoryMessage(message) {
+      victoryMessageElement.innerText = message;
+    }
+
+    function updateBoard() {
+      const cells = document.getElementsByClassName("cell");
+      for (let i = 0; i < cells.length; i++) {
+        cells[i].innerText = gameBoard[i];
+        cells[i].classList.remove("swap", "destroy");
+        if (powerUpActive && selectedCell !== null) {
+          cells[selectedCell].classList.add("swap");
+        }
+        if (destroyActive && destroyPowerUps[currentPlayer] > 0 && gameBoard[i] !== "") {
+          cells[i].classList.add("destroy");
+        }
+      }
+      updateSwapButton();
+      updateDestroyButton();
+    }
+
+    function resetGame() {
+      gameBoard = ["", "", "", "", "", "", "", "", ""];
+      currentPlayer = "X";
+      powerUpActive = false;
+      selectedCell = null;
+      destroyActive = false;
+      victoryMessageElement.innerText = "";
+      updateBoard();
+      document.getElementById("reset").disabled = true;
+      gameEnded = false;
+
+      // Reset power-up counts
+      swapPowerUps = { "X": 2, "O": 2 };
+      destroyPowerUps = { "X": 1, "O": 1 };
+    }
+
+    function toggleInstructions() {
+      const instructionsDiv = document.getElementById("instructions");
+      instructionsDiv.style.display = (instructionsDiv.style.display === "none") ? "block" : "none";
+    }
+
+    function checkWinner() {
+      const winningCombinations = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6],
+      ];
+
+      return winningCombinations.some((combination) =>
+        combination.every((index) => gameBoard[index] === currentPlayer)
+      );
+    }
+
+    initGame();
+  </script>
+</body>
+</html>
